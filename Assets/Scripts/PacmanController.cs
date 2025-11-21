@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,6 +8,8 @@ public class PacmanController : MonoBehaviour
     internal InputAction moveAction;
     internal Rigidbody2D rb;
     internal Vector2 direction;
+    private bool hasPowerPellet = false;
+    private SpriteRenderer renderer;
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -14,6 +17,7 @@ public class PacmanController : MonoBehaviour
         moveAction = InputSystem.actions.FindAction("move");
         rb = GetComponent<Rigidbody2D>();
         direction = new Vector2(0, 0);
+        renderer = GetComponent<SpriteRenderer>();
     }
 
     // Update is called once per frame
@@ -26,19 +30,43 @@ public class PacmanController : MonoBehaviour
         direction.Normalize();
         if (direction.magnitude > 0)
         {
-            // 1. Calculate the angle in radians using Atan2
             float angleRad = Mathf.Atan2(direction.y, direction.x);
-
-            // 2. Convert radians to degrees
             float angleDeg = angleRad * Mathf.Rad2Deg;
-
-            // 3. Apply the rotation to the GameObject's transform.
-            // Note: We use -90 because in a standard Unity 2D sprite setup,
-            // the sprite's "forward" (0 rotation) is often pointing right, 
-            // and we want it to point up when moving along the positive y-axis 
-            // or right along the positive x-axis. Pac-Man usually starts facing right.
             transform.rotation = Quaternion.Euler(0, 0, angleDeg);
         }
+
+        if (hasPowerPellet)
+        {
+            renderer.color = Color.orange;
+        }
         
+    }
+
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.tag == "PowerPellet")
+        {
+            Destroy(other.gameObject);
+            hasPowerPellet = true;
+            Invoke("noPowerPellet", 8f);
+        }else if (other.tag == "Ghost")
+        {
+            if (hasPowerPellet)
+            {
+                Destroy(other.gameObject);
+            }
+            else
+            {
+                transform.position = new Vector2(-.4f, -3.4f);
+                rb.linearVelocity = Vector2.zero;
+            }
+        }
+    }
+
+    private void noPowerPellet()
+    {
+        hasPowerPellet = false;
+        renderer.color = Color.white;
     }
 }
